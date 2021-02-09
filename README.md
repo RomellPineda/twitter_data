@@ -1,1 +1,1 @@
-# twitter_data
+# Project 2: Analysis of Twitter Data
