@@ -21,7 +21,7 @@ git pull
 git checkout <my_branchname...>
 git rebase main -i
 ```
-> Squash commits and resolve mergre conflicts as needed
+> Squash commits and resolve merge conflicts as needed
 
 ```
 git checkout main
