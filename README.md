@@ -27,8 +27,8 @@ git rebase main -i
 git checkout main
 git push origin <my_branchname...>
 ```
-Notify reviewer of pending review
+Notify team member of pending review
 
 
 ## Conflict Resolution Plan
-In the unlikely event that team members encounter an unresolvable issue between themselves, a knowledgeable, neutral third-party will be consulted to resolve the issue.  However, team members are encouraged to exhaustively attempt to resolve all issues internally.   
+In the unlikely event that team members encounter an unresolvable issue between themselves, a knowledgeable, neutral third-party will be consulted to aid in resolution.  However, team members are encouraged to resolve all issues internally.   
