@@ -27,7 +27,7 @@ git rebase main -i
 git checkout main
 git push origin <my_branchname...>
 ```
-Notify team member of pending review
+Create a pull request on GitHub and notify team member of pending review
 
 
 ## Squashing Commits
