@@ -17,17 +17,38 @@ import scala.concurrent.Future
 
 object Runner {
   def main(args: Array[String]): Unit = {
+    
     val spark = SparkSession
       .builder()
-      .appName("twitter_data")
+      .appName("Hello Spark SQL")
       .master("local[4]")
       .getOrCreate()
 
-    import spark.implicits._
+              //we want to always add an import here, it enables some syntax and code generation:
+              // if you run into mysterious errors with what should be working code, check to make sure this import exists
+              import spark.implicits._
 
-    spark.sparkContext.setLogLevel("WARN")
+              spark.sparkContext.setLogLevel("WARN")
 
-    helloTweetStream(spark)
+              //helloSparkSql(spark)
+              //helloTweetStream(spark)
+
+              helloMySQL(spark)
+
+    spark.stop()
+  }
+  
+  def helloMySQL(spark: SparkSession): Unit = {
+  
+      import spark.implicits._
+    
+      val schemaPeople = spark.read.json("twitterstream")
+      schemaPeople.createOrReplaceTempView("PeopleTable") // create database
+    
+      val teenagers = spark.sql("SELECT data.text FROM PeopleTable")
+      val results = teenagers.collect()
+          results.foreach(println)
+   
   }
 
   def helloTweetStream(spark: SparkSession): Unit = {
