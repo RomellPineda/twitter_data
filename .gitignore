@@ -178,3 +178,4 @@ project/project/
 project/target/
 .worksheet
 *.tsv
+.vscode
