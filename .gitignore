@@ -162,3 +162,19 @@ spark-warehouse/
 *.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/scala,spark,apachehadoop,vscode,macos,metals
+
+### Additional ###
+tweetstream-*
+*.parquet
+.cache/
+.history/
+.lib/
+dist/*
+bin/
+libexec/
+project/plugins/project/
+project/*-shim.sbt
+project/project/
+project/target/
+.worksheet
+*.tsv
