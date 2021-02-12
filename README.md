@@ -31,7 +31,7 @@ Notify team member of pending review
 
 
 ## Squashing Commits
-We will want to squash commits in order to keep the commit history streamlined.  When you run `git rebase main -i` a panel in your default text editor will open. Refer to the image below.
+We will want to squash commits in order to keep the project history streamlined.  When you run `git rebase main -i` a panel in your default text editor will open. Refer to the image below.
 > ![text editor panel example](assets/picks.png)
 If the text within the panel appears similar to the image above with multiple "pick" lines, change all but one line to "squash"
 
