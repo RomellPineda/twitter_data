@@ -17,59 +17,23 @@ import scala.concurrent.Future
 
 object Runner {
   def main(args: Array[String]): Unit = {
-    
     val spark = SparkSession
       .builder()
-      .appName("Hello Spark SQL")
+      .appName("twitter_data")
       .master("local[4]")
       .getOrCreate()
 
-              //we want to always add an import here, it enables some syntax and code generation:
-              // if you run into mysterious errors with what should be working code, check to make sure this import exists
-              import spark.implicits._
+    import spark.implicits._
+    spark.sparkContext.setLogLevel("WARN")
 
-              spark.sparkContext.setLogLevel("WARN")
-
-              //helloSparkSql(spark)
-              //helloTweetStream(spark)
-
-              helloMySQL(spark)
-
-    spark.stop()
-  }
-  
-  def helloMySQL(spark: SparkSession): Unit = {
-  
-      import spark.implicits._
-    
-      val schemaPeople = spark.read.json("twitterstream")
-      schemaPeople.createOrReplaceTempView("PeopleTable") // create database
-    
-      val teenagers = spark.sql("SELECT data.text FROM PeopleTable")
-      val results = teenagers.collect()
-          results.foreach(println)
-   
+    helloTweetStream(spark)
   }
 
   def helloTweetStream(spark: SparkSession): Unit = {
     import spark.implicits._
     val bearerToken = System.getenv(("TWITTER_BEARER_TOKEN"))
 
-    import scala.concurrent.ExecutionContext.Implicits.global
-    Future {
-      tweetStreamToDir(bearerToken, queryString = "?tweet.fields=geo&expansions=geo.place_id")
-    }
-
-    var start = System.currentTimeMillis()
-    var filesFoundInDir = false
-    while(!filesFoundInDir && (System.currentTimeMillis()-start) < 30000) {
-      filesFoundInDir = Files.list(Paths.get("twitterstream")).findFirst().isPresent()
-      Thread.sleep(500)
-    }
-    if(!filesFoundInDir) {
-      println("Error: Unable to populate tweetstream after 30 seconds.  Exiting..")
-      System.exit(1)
-    }
+    tweetStreamToDir(bearerToken, queryString = "?expansions=author_id")
   }
 
   def tweetStreamToDir(
@@ -87,7 +51,6 @@ object Runner {
       s"https://api.twitter.com/2/tweets/sample/stream$queryString"
     )
     val httpGet = new HttpGet(uriBuilder.build())
-    //set up the authorization for this request, using our bearer token
     httpGet.setHeader("Authorization", s"Bearer $bearerToken")
     val response = httpClient.execute(httpGet)
     val entity = response.getEntity()
@@ -96,7 +59,6 @@ object Runner {
         new InputStreamReader(entity.getContent())
       )
       var line = reader.readLine()
-      //initial filewriter, replaced every linesPerFile
       var fileWriter = new PrintWriter(Paths.get("tweetstream.tmp").toFile)
       var lineNumber = 1
       val millis = System.currentTimeMillis()
@@ -108,6 +70,7 @@ object Runner {
             Paths.get(s"$dirname/tweetstream-$millis-${lineNumber/linesPerFile}"))
           fileWriter = new PrintWriter(Paths.get("tweetstream.tmp").toFile)
         }
+
         fileWriter.println(line)
         line = reader.readLine()
         lineNumber += 1
