@@ -13,7 +13,8 @@ lazy val root = (project in file("."))
     // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
     libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.12",
     // https://mvnrepository.com/artifact/commons-io/commons-io
-    libraryDependencies += "commons-io" % "commons-io" % "2.8.0"
+    libraryDependencies += "commons-io" % "commons-io" % "2.8.0",
+    libraryDependencies += "com.amazonaws" % "aws-java-sdk-s3" % "1.11.427"
   )
 
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
