@@ -1,5 +1,7 @@
 package twitter_data
 
+import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.auth.BasicAWSCredentials
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions
 import org.apache.spark.sql.DataFrameReader
@@ -8,7 +10,9 @@ import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.utils.URIBuilder
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.util.EntityUtils
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.nio.file.Files
@@ -32,48 +36,85 @@ object Runner {
   def helloTweetStream(spark: SparkSession): Unit = {
     import spark.implicits._
     val bearerToken = System.getenv(("TWITTER_BEARER_TOKEN"))
+    val tweetstreamURI = "https://api.twitter.com/2/tweets/sample/stream"
+    val userURI = "https://api.twitter.com/2/users"
+    val testUserIdString = "?ids=830480558597763075,150942805,1479694148,1284732561927929856,880545236732313600"
 
-    tweetStreamToDir(bearerToken, queryString = "?expansions=author_id")
+    // tweetStreamToDir(bearerToken, uriString = tweetstreamURI + "?expansions=author_id")
+    tweetStreamToDir(bearerToken, dirname = "users", uriString = userURI + testUserIdString + "&user.fields=created_at,public_metrics,verified")
   }
 
   def tweetStreamToDir(
       bearerToken: String,
       dirname: String = "twitterstream",
       linesPerFile: Int = 1000,
-      queryString: String = ""
+      uriString: String = ""
   ) = {
+
+    // AWS configs
+    // val bucketName = "usf-210104-big-data"
+    // val key = System.getenv(("DAS_KEY_ID"))
+    // val secret = System.getenv(("DAS_SEC"))
+
+    // AWS client set up
+    // val awsCredentials = new BasicAWSCredentials(key, secret)
+    // val amazonS3Client = new AmazonS3Client(awsCredentials)
+
     val httpClient = HttpClients.custom
       .setDefaultRequestConfig(
         RequestConfig.custom.setCookieSpec(CookieSpecs.STANDARD).build()
       )
       .build()
     val uriBuilder: URIBuilder = new URIBuilder(
-      s"https://api.twitter.com/2/tweets/sample/stream$queryString"
+      uriString
     )
     val httpGet = new HttpGet(uriBuilder.build())
     httpGet.setHeader("Authorization", s"Bearer $bearerToken")
+
     val response = httpClient.execute(httpGet)
     val entity = response.getEntity()
-    if (null != entity) {
-      val reader = new BufferedReader(
-        new InputStreamReader(entity.getContent())
-      )
-      var line = reader.readLine()
-      var fileWriter = new PrintWriter(Paths.get("tweetstream.tmp").toFile)
-      var lineNumber = 1
-      val millis = System.currentTimeMillis()
-      while (line != null) {
-        if (lineNumber % linesPerFile == 0) {
-          fileWriter.close()
-          Files.move(
-            Paths.get("tweetstream.tmp"),
-            Paths.get(s"$dirname/tweetstream-$millis-${lineNumber/linesPerFile}"))
-          fileWriter = new PrintWriter(Paths.get("tweetstream.tmp").toFile)
-        }
 
-        fileWriter.println(line)
-        line = reader.readLine()
-        lineNumber += 1
+    if (null != entity) {
+      if (dirname == "users") {
+        val userData = EntityUtils.toString(entity, "UTF-8")
+        var fileWriter = new PrintWriter(Paths.get("users.tmp").toFile)
+        fileWriter.write(userData)
+        fileWriter.flush()
+        fileWriter.close()
+
+        // Write user data to s3
+        // val millis = System.currentTimeMillis()
+        // val folderName = s"$dirname/data-$millis"
+        // var fileToUpload = new File("users.tmp")
+        // amazonS3Client.putObject(bucketName, folderName, fileToUpload)
+      } else {
+        val reader = new BufferedReader(
+          new InputStreamReader(entity.getContent())
+        )
+        var line = reader.readLine()
+        var fileWriter = new PrintWriter(Paths.get("tweetstream.tmp").toFile)
+        var lineNumber = 1
+        val millis = System.currentTimeMillis()
+        while (line != null) {
+          if (lineNumber % linesPerFile == 0) {
+            fileWriter.close()
+            // AWS file path
+            // val fileName = s"$dirname/tweetstream-$millis-${lineNumber/linesPerFile}"
+            Files.move(
+              Paths.get("tweetstream.tmp"),
+              Paths.get(s"$dirname/tweetstream-$millis-${lineNumber/linesPerFile}"))
+              // Configured to write data to s3 and local
+              // Paths.get(fileName))
+            fileWriter = new PrintWriter(Paths.get("tweetstream.tmp").toFile)
+            // Write to AWS
+            // var fileToUpload = new File(fileName)
+            // amazonS3Client.putObject(bucketName, fileName, fileToUpload)
+          }
+  
+          fileWriter.println(line)
+          line = reader.readLine()
+          lineNumber += 1
+        }
       }
     }
   }
