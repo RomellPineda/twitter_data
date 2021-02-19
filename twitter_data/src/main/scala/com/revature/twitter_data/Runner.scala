@@ -21,6 +21,8 @@ import java.nio.file.Paths
 import scala.concurrent.Future
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.time._
+import java.lang.Thread
 
 object Runner {
   def main(args: Array[String]): Unit = {
@@ -33,8 +35,11 @@ object Runner {
     import spark.implicits._
     spark.sparkContext.setLogLevel("WARN")
 
+    var positiveHashTags = Array("love", "congratulations", "thank you", "smile", "heart","😀","😃", "😄", "😁");
+    var negativeHashTags = Array("#traitors", "abandon", "cry", "trump", "🥺");
+
     var runnerindex = 0
-    while(runnerindex < 50){
+    while(runnerindex < 10){
       //populate tweetstream.tmp and users.tmp simultaneously
       helloTweetStream(spark)
 
@@ -43,6 +48,12 @@ object Runner {
       joinedDataFrame.show()
 
       //add analysis functions here
+      //positive tweets
+      analize_hashtags(spark, positiveHashTags, joinedDataFrame); 
+
+      //negative tweets
+      analize_hashtags(spark, negativeHashTags, joinedDataFrame);
+
       //these functions should take in joinedDataFrame, perform spark.sql() analysis, and then return a DF
       //we can either print intermediate results for loop, or we can keep track of results throughout all loops
       //or we can combine all of our tables throughout each loop and perform analysis on those after
@@ -51,18 +62,10 @@ object Runner {
       add functionality to append our data to s3
       */
 
-     //positive tweets
-     var positiveHashTags = Array("#Yay", "#LOVE", "#Dboss", "heart"); 
-     analize_hashtags(spark, positiveHashTags, joinedDataFrame);
-
-    //negative tweets
-     var negativeHashTags = Array("#Traitors", "abandon", "cry", "Trump");
-     analize_hashtags(spark, negativeHashTags, joinedDataFrame);
-
-
-
+      //implement running index
       runnerindex += 1
-      println(s"Loop #"+runnerindex)
+      //print loop # to console
+      println(s"*** END OF TWEET STREAM LOOP #"+runnerindex+" ***")
     }
   }
 
@@ -71,9 +74,30 @@ object Runner {
     val bearerToken = System.getenv(("TWITTER_BEARER_TOKEN"))
     val tweetstreamURI = "https://api.twitter.com/2/tweets/sample/stream"
     val userURI = "https://api.twitter.com/2/users"
-    tweetStreamToDir(bearerToken, uriString = tweetstreamURI + "?tweet.fields=created_at&expansions=author_id")
-    //get temp user IDs  from tweetstream.tmp
-    val tempuserstring = usersStringFromTweetStream(spark)
+    //temp user ID string prior to function
+    var tempuserstring = ""
+      
+    //try catch error handling-----------------------
+    /*
+    waits 20 minutes when no files avail from tweet stream 
+    in reality, we can pull 50 times from online v2 tweet stream every 15 min,
+    but 20 mins is a safe call
+    */
+    try {
+      //get tweet stream to .tmp and read from it
+      tweetStreamToDir(bearerToken, uriString = tweetstreamURI + "?tweet.fields=created_at&expansions=author_id")
+      tempuserstring = usersStringFromTweetStream(spark)
+    } catch {
+      case e: org.apache.spark.sql.AnalysisException => {      
+        println("Tweet call limit reached! Waiting 20 minutes...")
+        Thread.sleep(1200000)
+        //get tweet stream to .tmp and read from it
+        tweetStreamToDir(bearerToken, uriString = tweetstreamURI + "?tweet.fields=created_at&expansions=author_id")
+        tempuserstring = usersStringFromTweetStream(spark)
+      }
+    }
+    //end of error handling-----------------------
+
     //add user IDs to end of get-users URL
     val testUserIdString = "?ids=" + tempuserstring
     tweetStreamToDir(bearerToken, dirname = "users", uriString = userURI + testUserIdString + "&user.fields=created_at,public_metrics,verified")
@@ -103,6 +127,7 @@ object Runner {
     val uriBuilder: URIBuilder = new URIBuilder(
       uriString
     )
+    //println(uriString)
     val httpGet = new HttpGet(uriBuilder.build())
     httpGet.setHeader("Authorization", s"Bearer $bearerToken")
 
@@ -196,17 +221,6 @@ object Runner {
         val tweettempDF = spark.read.json("tweetstream.tmp")
         tweettempDF.createOrReplaceTempView("tweetstemp")
         val tweettempQueryDF = spark.sql("SELECT data.author_id from tweetstemp")
-      /*
-      try {
-
-      } catch {
-        case e: FileNotFoundException => println("could not find file" + e)
-        case e: IOException => println("/////" + e)
-        case e: Exception => println("-------" + e)
-        Thread.sleep(50000)
-      } finally {
-        println("i do not know, bro??")
-      }*/
       //-----------------------------------------
 
       //turn the DF from above (user/author IDs) into a string of userIDs
@@ -271,25 +285,17 @@ object Runner {
 
   
  def analize_hashtags(spark: SparkSession, arr: Array[String], joinedDF: DataFrame): Unit = {
- 
+   /*
+   analyzes pos/neg hashtag string
+   */
    var twtSQL = "";
-
-
    joinedDF.createOrReplaceTempView("TweetTable") // create database 
-
    // COUNT THE HASHTAGS --------------
    println("Analyzing the Data --------")
    for (i <- 0 to arr.length - 1) {
-      
-       twtSQL = "SELECT Count(*) AS Count FROM TweetTable WHERE data.text LIKE '%" + arr(i) + "%'";
-
-
-
+       twtSQL = "SELECT Count(*) AS Count FROM TweetTable WHERE lower(data.text) LIKE '%" + arr(i) + "%'";
        val twtCount = spark.sql( twtSQL );
        println( arr(i) + " : " + twtCount.head().get(0) );
-      
    }
-
   }
-
 }
