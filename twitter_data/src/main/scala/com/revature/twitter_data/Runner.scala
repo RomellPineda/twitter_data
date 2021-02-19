@@ -35,10 +35,10 @@ object Runner {
     import spark.implicits._
     spark.sparkContext.setLogLevel("WARN")
 
-    var positiveHashTags = Array("love", "congratulations", "thank you", "smile", "heart","😀","😃", "😄", "😁");
-    var negativeHashTags = Array("#traitors", "abandon", "cry", "trump", "🥺");
-
+    var positiveHashTags = Array("love", "congratulations", "thank you", "exciting", "excited", "favorite", "fav", "amazing", "lovely", "incredible", "elated", "😀", "😃", "😄", "😁", "😆", "😚", "😘", "🥰", "😍", "🤩", "🥳", "🙂", "☺️", "😊", "😏", "😋", "😎", "❤️", "♥", "👍", "🙌");
+    var negativeHashTags = Array("hate", "stop", "angry", "stupid", "horrible", "worst", "sucks", "bad", "disappointing", "😐", "😰", "😰", "😔", "☹️", "🙁", "😕", "😟", "🥺", "😢", "😥", "😓", "😞", "😖", "😣", "😩", "😫", "🤢", "🤮", "💔", "🖕");
     var runnerindex = 0
+    
     while(runnerindex < 10){
       //populate tweetstream.tmp and users.tmp simultaneously
       helloTweetStream(spark)
@@ -46,10 +46,20 @@ object Runner {
       //join tweetstream.tmp and users.tmp into a DF
       val joinedDataFrame = joinTweetAndUsersTemp(spark)
       joinedDataFrame.show()
+      joinedDataFrame.printSchema()
 
       //add analysis functions here
       //positive tweets
       analize_hashtags(spark, positiveHashTags, joinedDataFrame); 
+
+      //roml function calls
+      //romlfunction() -returns an array of results - 10 negative 20 postive, 9 negative 5 postive...
+      //1) query
+      //2) produce results
+      //3) writes the output to a file or to command line with each loop
+      //example return = [10,20] *next loop* [9,5] 
+      //^after 2 loops, you would have something like [19,25]
+      //array += romlfunction()
 
       //negative tweets
       analize_hashtags(spark, negativeHashTags, joinedDataFrame);
@@ -66,13 +76,17 @@ object Runner {
       runnerindex += 1
       //print loop # to console
       println(s"*** END OF TWEET STREAM LOOP #"+runnerindex+" ***")
+      
+      //write tweetstream.tmp to long-term file (Ronald)
     }
   }
 
   def helloTweetStream(spark: SparkSession): Unit = {
     import spark.implicits._
     val bearerToken = System.getenv(("TWITTER_BEARER_TOKEN"))
-    val tweetstreamURI = "https://api.twitter.com/2/tweets/sample/stream"
+    //streamed data - tweets
+    val tweetstreamURI = "https://api.twitter.com/2/tweets/search/stream"
+    //non-streamed data - users
     val userURI = "https://api.twitter.com/2/users"
     //temp user ID string prior to function
     var tempuserstring = ""
