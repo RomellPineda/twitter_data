@@ -23,6 +23,7 @@ import java.io.FileNotFoundException
 import java.io.IOException
 import java.time._
 import java.lang.Thread
+import scala.io.Source
 
 object Runner {
   def main(args: Array[String]): Unit = {
@@ -35,49 +36,60 @@ object Runner {
     import spark.implicits._
     spark.sparkContext.setLogLevel("WARN")
 
+    //positive and negative hashtags
     var positiveHashTags = Array("love", "congratulations", "thank you", "exciting", "excited", "favorite", "fav", "amazing", "lovely", "incredible", "elated", "😀", "😃", "😄", "😁", "😆", "😚", "😘", "🥰", "😍", "🤩", "🥳", "🙂", "☺️", "😊", "😏", "😋", "😎", "❤️", "♥", "👍", "🙌");
     var negativeHashTags = Array("hate", "stop", "angry", "stupid", "horrible", "worst", "sucks", "bad", "disappointing", "😐", "😰", "😰", "😔", "☹️", "🙁", "😕", "😟", "🥺", "😢", "😥", "😓", "😞", "😖", "😣", "😩", "😫", "🤢", "🤮", "💔", "🖕");
+    
+    //printwriter for longterm tweet file
+    //LT PT 1!
+    //val pw = new PrintWriter(new File("longtermtweets.txt"))
+
+    //non-streamed analysis here----------------------------------------------------------------------------------------------------
+    println("NON-STREAMED ANALYSIS START----------------------")
+    //call function that
+    time_pos_neg(spark)
+    //roml functionbelow
+
+    println("NON-STREAMED ANALYSIS END----------------------")
+    //----------------------------------------------------------------------------------------------------
+
+    //index for running the loop
     var runnerindex = 0
     
-    while(runnerindex < 10){
+    while(runnerindex < 10000){
       //populate tweetstream.tmp and users.tmp simultaneously
       helloTweetStream(spark)
 
       //join tweetstream.tmp and users.tmp into a DF
       val joinedDataFrame = joinTweetAndUsersTemp(spark)
-      joinedDataFrame.show()
-      joinedDataFrame.printSchema()
+      //joinedDataFrame.show()
 
-      //add analysis functions here
+      //write tweetstream.tmp to long-term file
+      //LT PT 2!
+      //val lines = scala.io.Source.fromFile("tweetstream.tmp").mkString
+      //pw.write(lines)
+
+      //add analysis functions here****************************************************************************************************************************
       //positive tweets
-      analize_hashtags(spark, positiveHashTags, joinedDataFrame); 
-
-      //roml function calls
-      //romlfunction() -returns an array of results - 10 negative 20 postive, 9 negative 5 postive...
-      //1) query
-      //2) produce results
-      //3) writes the output to a file or to command line with each loop
-      //example return = [10,20] *next loop* [9,5] 
-      //^after 2 loops, you would have something like [19,25]
-      //array += romlfunction()
+      analize_hashtags(spark, positiveHashTags, joinedDataFrame, "Positive"); 
 
       //negative tweets
-      analize_hashtags(spark, negativeHashTags, joinedDataFrame);
+      analize_hashtags(spark, negativeHashTags, joinedDataFrame, "Negative");
 
       //these functions should take in joinedDataFrame, perform spark.sql() analysis, and then return a DF
       //we can either print intermediate results for loop, or we can keep track of results throughout all loops
       //or we can combine all of our tables throughout each loop and perform analysis on those after
+      //END ANALYSIS FUNCTIONS****************************************************************************************************************************
 
       /*
       add functionality to append our data to s3
       */
 
+
       //implement running index
       runnerindex += 1
       //print loop # to console
       println(s"*** END OF TWEET STREAM LOOP #"+runnerindex+" ***")
-      
-      //write tweetstream.tmp to long-term file (Ronald)
     }
   }
 
@@ -92,26 +104,8 @@ object Runner {
     var tempuserstring = ""
       
     //try catch error handling-----------------------
-    /*
-    waits 20 minutes when no files avail from tweet stream 
-    in reality, we can pull 50 times from online v2 tweet stream every 15 min,
-    but 20 mins is a safe call
-    */
-    try {
-      //get tweet stream to .tmp and read from it
-      tweetStreamToDir(bearerToken, uriString = tweetstreamURI + "?tweet.fields=created_at&expansions=author_id")
-      tempuserstring = usersStringFromTweetStream(spark)
-    } catch {
-      case e: org.apache.spark.sql.AnalysisException => {      
-        println("Tweet call limit reached! Waiting 20 minutes...")
-        Thread.sleep(1200000)
-        //get tweet stream to .tmp and read from it
-        tweetStreamToDir(bearerToken, uriString = tweetstreamURI + "?tweet.fields=created_at&expansions=author_id")
-        tempuserstring = usersStringFromTweetStream(spark)
-      }
-    }
-    //end of error handling-----------------------
-
+    tempuserstring = try_catch_tweetstream(tweetstreamURI, spark)
+    
     //add user IDs to end of get-users URL
     val testUserIdString = "?ids=" + tempuserstring
     tweetStreamToDir(bearerToken, dirname = "users", uriString = userURI + testUserIdString + "&user.fields=created_at,public_metrics,verified")
@@ -298,18 +292,73 @@ object Runner {
   }
 
   
- def analize_hashtags(spark: SparkSession, arr: Array[String], joinedDF: DataFrame): Unit = {
+ def analize_hashtags(spark: SparkSession, arr: Array[String], joinedDF: DataFrame, pos_neg: String): Unit = {
    /*
    analyzes pos/neg hashtag string
    */
    var twtSQL = "";
    joinedDF.createOrReplaceTempView("TweetTable") // create database 
    // COUNT THE HASHTAGS --------------
-   println("Analyzing the Data --------")
+   println(s"Count of $pos_neg Indicators in this Set--------")
    for (i <- 0 to arr.length - 1) {
        twtSQL = "SELECT Count(*) AS Count FROM TweetTable WHERE lower(data.text) LIKE '%" + arr(i) + "%'";
        val twtCount = spark.sql( twtSQL );
-       println( arr(i) + " : " + twtCount.head().get(0) );
+       println( arr(i) + ": " + twtCount.head().get(0) );
    }
   }
+
+  def time_pos_neg(spark: SparkSession): Unit = {
+      /*
+      counts positive and negative tweets by hour
+      */
+      //create longtermDF from the dump
+      val longtermDF = spark.read.json("longtermtweets_dump.txt")
+      longtermDF.createOrReplaceTempView("tweets_LT")
+
+      //positive tweets total
+      val LTDFpos = spark.sql("select count(*) as total_pos_tweets from tweets_LT where matching_rules.tag[0] like '%positive%'")
+      LTDFpos.show()
+      //negative tweets total
+      val LTDFneg = spark.sql("select count(*) as total_neg_tweets from tweets_LT where matching_rules.tag[0] like '%negative%'")
+      LTDFneg.show()
+
+      //positive tweets by time of day
+      val LTDFposhr = spark.sql("select substr(data.created_at,12,2) as hour_UTC, count(*) as count_pos from tweets_LT where matching_rules.tag[0] like '%positive%' group by data.created_at order by hour_UTC asc")
+      LTDFposhr.createOrReplaceTempView("poshours")
+      val LTDFposfinal  = spark.sql("select hour_UTC, sum(count_pos) as count_pos_tweets from poshours group by hour_UTC order by hour_UTC asc")
+      LTDFposfinal.createOrReplaceTempView("poshoursfinal")
+
+      //negative tweets by time of day
+      val LTDFneghr = spark.sql("select substr(data.created_at,12,2) as hour_UTC, count(*) as count_neg from tweets_LT where matching_rules.tag[0] like '%negative%' group by data.created_at order by hour_UTC asc")
+      LTDFneghr.createOrReplaceTempView("neghours")
+      val LTDFnegfinal  = spark.sql("select hour_UTC, sum(count_neg) as count_neg_tweets from neghours group by hour_UTC order by hour_UTC asc")
+      LTDFnegfinal.createOrReplaceTempView("neghoursfinal")
+
+      //join pos and neg tweets by hour and perform aggregtions
+      val joinedbyhour = spark.sql("select neghoursfinal.hour_UTC, poshoursfinal.count_pos_tweets, neghoursfinal.count_neg_tweets, sum(poshoursfinal.count_pos_tweets/(poshoursfinal.count_pos_tweets+neghoursfinal.count_neg_tweets)) as pct_pos, sum(neghoursfinal.count_neg_tweets/(poshoursfinal.count_pos_tweets+neghoursfinal.count_neg_tweets)) as pct_neg from poshoursfinal inner join neghoursfinal on neghoursfinal.hour_UTC = poshoursfinal.hour_UTC group by neghoursfinal.hour_UTC, poshoursfinal.count_pos_tweets, neghoursfinal.count_neg_tweets order by neghoursfinal.hour_UTC asc")
+      joinedbyhour.show()
+  }
+
+  def try_catch_tweetstream(tweetstreamURI: String, spark: SparkSession): String = {
+    /*
+    try catch loop that keeps running code, so that we always get streamed data
+    */
+    //bearer token
+    val bearerToken = System.getenv(("TWITTER_BEARER_TOKEN"))
+    val tempuserstring = ""
+    try {
+      //get tweet stream to .tmp and read from it
+      tweetStreamToDir(bearerToken, uriString = tweetstreamURI + "?tweet.fields=created_at&expansions=author_id")
+      val tempuserstring = usersStringFromTweetStream(spark)
+    } catch {
+      case e: org.apache.spark.sql.AnalysisException => {      
+        println("No tweets found. Trying again in two minutes...")
+        Thread.sleep(120000)
+        try_catch_tweetstream(tweetstreamURI, spark)
+      }
+    }
+    return tempuserstring
+  }
+
+
 }
