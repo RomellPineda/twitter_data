@@ -1,0 +1,27 @@
+curl -X POST 'https://api.twitter.com/2/tweets/search/stream/rules' \
+-H "Content-type: application/json" \
+-H "Authorization: Bearer $TWITTER_BEARER_TOKEN" -d \
+'{
+  "add": [
+    {"value": "(love OR congratulations OR thank you OR exciting OR excited OR favorite OR fav OR amazing OR lovely OR incredible OR elated) lang:en -no", "tag": "positive keywords"},
+    {"value": "(😀 OR 😃 OR 😄 OR 😁 OR 😆 OR 😚 OR 😘 OR 🥰 OR 😍 OR 🤩 OR 🥳 OR 🙂 OR 😊 OR 😏 OR 😋 OR 😎 OR ❤️ OR ♥️ OR 👍 OR 🙌) lang:en", "tag": "positive emojis"},
+    {"value": "(hate OR stop OR angry OR stupid OR horrible OR worst OR sucks OR bad OR disappointing OR terrible) lang:en -no", "tag": "negative keywords"},
+    {"value": "(😐 OR 😰 OR 😰 OR 😔 OR ☹️ OR 🙁 OR 😕 OR 😟 OR 🥺 OR 😢 OR 😥 OR 😓 OR 😞 OR 😖 OR 😣 OR 😩 OR 😫 OR 🤢 OR 🤮 OR 💔 OR 🖕) lang:en", "tag": "negative emojis"}
+  ]
+}'
+
+curl -X POST 'https://api.twitter.com/2/tweets/search/stream/rules' \
+  -H "Content-type: application/json" \
+  -H "Authorization: Bearer $TWITTER_BEARER_TOKEN" -d \
+  '{
+    "delete": {
+      "ids": [
+        "1362882678937190405",
+        "1362882678937190407",
+        "1362882678937190403",
+        "1362882678937190404",
+        "1362882678937190402",
+        "1362882678937190406"
+      ]
+    }
+  }'
