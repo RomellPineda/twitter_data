@@ -48,7 +48,8 @@ object Runner {
     println("NON-STREAMED ANALYSIS START----------------------")
     //call function that
     time_pos_neg(spark)
-    //roml functionbelow
+    // Question3.run(spark)
+    // Question4.run(spark)
 
     println("NON-STREAMED ANALYSIS END----------------------")
     //----------------------------------------------------------------------------------------------------
@@ -219,6 +220,9 @@ object Runner {
       //last tweet entry in tweet.tmp is always corrupted, so the next two lines remove that line
       import sys.process._
       Seq("sed","-i","$ d","tweetstream.tmp")!
+
+      // For Mac only
+      // Seq("sed","-i", ".bak","$ d","tweetstream.tmp")!
 
       import spark.implicits._
 
