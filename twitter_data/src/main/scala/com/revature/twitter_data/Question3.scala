@@ -5,6 +5,12 @@ import org.apache.spark.sql.functions
 import org.apache.spark.sql.DataFrameReader
 
 object Question3 {
+  /*
+  Answers question three by observing pos/neg distribution of tweets from both
+  active users
+  &
+  inactive users
+  */
   def run(spark: SparkSession) {
     import spark.implicits._
     val data = spark.read.json("filteredDataSample")
@@ -42,25 +48,19 @@ object Question3 {
     val resultNonActivePos = totalNonActivePos.as[Long].collect()
     val resultNonActiveNeg = totalNonActiveNeg.as[Long].collect()
 
-    println("Question 3")
     println(" ")
-    println("Results for users with above average tweet activity")
-    val resultsTableActiveUsers = Seq(
-      Result(" Positive tweets active users ", (resultActivePos(0).toFloat / (resultActivePos(0) + resultActiveNeg(0))) * 100),
-      Result(" Negative tweets active users ", (resultActiveNeg(0).toFloat / (resultActivePos(0) + resultActiveNeg(0))) * 100),
-      ).toDS()
+    println("Results for users with above average tweet activity---")
+    val resultsTableActiveUsers = Seq(Result(" Positive tweets active users ", (resultActivePos(0).toFloat / (resultActivePos(0) + resultActiveNeg(0))) * 100),Result(" Negative tweets active users ", (resultActiveNeg(0).toFloat / (resultActivePos(0) + resultActiveNeg(0))) * 100)).toDS()
     resultsTableActiveUsers.show()
       
       
-    println("Results for users with below average tweet activity")
+    println("Results for users with below average tweet activity---")
     val resultsTableNonActiveUser = Seq(
-      Result(" Positive tweets non-active users ", (resultNonActivePos(0).toFloat / (resultNonActivePos(0) + resultNonActiveNeg(0))) * 100),
-      Result(" Negative tweets from non-active users ", (resultNonActiveNeg(0).toFloat / (resultNonActivePos(0) + resultNonActiveNeg(0))) * 100)
-      ).toDS()
+      Result(" Positive tweets non-active users ", (resultNonActivePos(0).toFloat / (resultNonActivePos(0) + resultNonActiveNeg(0))) * 100),Result(" Negative tweets from non-active users ", (resultNonActiveNeg(0).toFloat / (resultNonActivePos(0) + resultNonActiveNeg(0))) * 100)).toDS()
     resultsTableNonActiveUser.show()
 
     // hopefully this is scoped only to this object, otherwise may shut down session for main
-    spark.stop()
+    //spark.stop()
   }
 
   case class Result(results_description: String, percentage: Float)

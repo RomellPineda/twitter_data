@@ -6,6 +6,12 @@ import org.apache.spark.sql.DataFrameReader
 import java.time.LocalDateTime
 
 object Question4 {
+  /*
+  answers question 4 by observing pos/neg tweet distribution from
+  old user accounts
+  &
+  newer user accounts
+  */
   def run(spark: SparkSession) {
     import spark.implicits._
 
@@ -45,24 +51,18 @@ object Question4 {
     val resultNewPos = totalNewPos.as[Long].collect()
     val resultNewNeg = totalNewNeg.as[Long].collect()
 
-    println("Question 4")
-    println(" ")
-    println("Percentage of positive and negative tweets for older users")
+    println("Percentage of positive and negative tweets for older users---")
     val resultsTableOlderUsers = Seq(
-      Result(" Positive tweets older users ", (resultOldPos(0).toFloat / (resultOldPos(0) + resultOldNeg(0))) * 100),
-      Result(" Negative tweets older users ", (resultOldNeg(0).toFloat / (resultOldPos(0) + resultOldNeg(0))) * 100),
-      ).toDS()
+      Result(" Positive tweets older users ", (resultOldPos(0).toFloat / (resultOldPos(0) + resultOldNeg(0))) * 100),Result(" Negative tweets older users ", (resultOldNeg(0).toFloat / (resultOldPos(0) + resultOldNeg(0))) * 100)).toDS()
     resultsTableOlderUsers.show()
     
-    println("Percentage of positive and negative tweets for newer users")
+    println("Percentage of positive and negative tweets for newer users---")
     val resultsTableNewerUser = Seq(
-      Result(" Positive tweets newer users ", (resultNewPos(0).toFloat / (resultNewPos(0) + resultNewNeg(0))) * 100),
-      Result(" Negative tweets from newer users ", (resultNewNeg(0).toFloat / (resultNewPos(0) + resultNewNeg(0))) * 100)
-      ).toDS()
+      Result(" Positive tweets newer users ", (resultNewPos(0).toFloat / (resultNewPos(0) + resultNewNeg(0))) * 100),Result(" Negative tweets from newer users ", (resultNewNeg(0).toFloat / (resultNewPos(0) + resultNewNeg(0))) * 100)).toDS()
     resultsTableNewerUser.show()
 
     // hopefully this is scoped only to this object, otherwise may shut down session for main
-    spark.stop()
+    //spark.stop()
   }
 
   case class Result(results_description: String, percentage: Float)
