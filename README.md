@@ -1,4 +1,39 @@
 # Project 2: Analysis of Twitter Data
+Ronald Hernandez, Romell Pineda, Michael Stanco
+
+## Main/Broad Questions to Answer
+Are tweets generally positive or negative?<br/>
+What makes a tweet positive or negative in nature?<br/>
+
+## More Specific Questions to Answer
+We want to find factors (such as hashtags, specific keywords, emojis, etc.) that are indicative of a tweet being deemed ‘positive’ or ‘negative’. We plan on setting up a table where we test/list factors that are accurate in labeling a tweet positive or negative. Using these factors, we will try to answer the following questions:
+- Within our criteria, are we able to accurately quantify a positive or negative tweet?
+- Does time of day play a role in tweet positivity/negativity?
+- Do active users tend to become more positive/negative?
+- Does age of a user account play a role in tweet positivity/negativity?
+- Are tweets from celebrities generally more negative than positive?
+- Can an observation be made about the correlation between an account’s followers and tweet positivity/negativity?
+
+## Procedure
+1) Understand twitter API data
+2) Find twitter data repository
+3) Establish criteria for positive/negative tweets
+4) Read in and process data from online twitter API
+5) Set-up code/queries to perform analysis
+6) Set-up cloud computing, such as AWS/EC2/SS3
+7) Submit to cloud computing platform(s) and run analysis
+8) Extract analysis/findings
+9) Compile all findings and conclusions into a final presentation
+
+## Technologies to be Used
+Git/Github<br/>
+Trello<br/>
+Scala/Spark<br/>
+Hive <br/>
+YARN<br/>
+AWS/SS3<br/>
+Twitter API<br/>
+Zoom/Discord<br/>
 
 ## Work Flow
 Recommended work flow for code changes is as follows:
@@ -9,23 +44,23 @@ From **main** branch run
 
 Create new feature branch with
 
-`git checkout -b <my_branchname-developer_alias>`
+`git checkout -b my_branchname-developer_alias`
 
 Make code changes and then...
 
 ```
-git add <my_changes>
+git add my_changes
 git commit -m 'added my changes'
 git checkout main
 git pull
-git checkout <my_branchname...>
+git checkout my_branchname
 git rebase main -i
 ```
 > Squash commits and resolve merge conflicts as needed. Refer to the respective sections below for additional information
 
 ```
 git checkout main
-git push origin <my_branchname...>
+git push origin my_branchname
 ```
 Create a pull request on GitHub and notify team member of pending review
 

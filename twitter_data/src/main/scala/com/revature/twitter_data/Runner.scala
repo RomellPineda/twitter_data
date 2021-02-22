@@ -263,6 +263,9 @@ object Runner {
       import sys.process._
       Seq("sed","-i","$ d","tweetstream.tmp")!
 
+      // For Mac only
+      // Seq("sed","-i", ".bak","$ d","tweetstream.tmp")!
+
       import spark.implicits._
 
       //get author IDs from tweetstream.tmp
