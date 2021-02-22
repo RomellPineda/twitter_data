@@ -44,23 +44,23 @@ From **main** branch run
 
 Create new feature branch with
 
-`git checkout -b <my_branchname-developer_alias>`
+`git checkout -b my_branchname-developer_alias`
 
 Make code changes and then...
 
 ```
-git add <my_changes>
+git add my_changes
 git commit -m 'added my changes'
 git checkout main
 git pull
-git checkout <my_branchname...>
+git checkout my_branchname
 git rebase main -i
 ```
 > Squash commits and resolve merge conflicts as needed. Refer to the respective sections below for additional information
 
 ```
 git checkout main
-git push origin <my_branchname...>
+git push origin my_branchname
 ```
 Create a pull request on GitHub and notify team member of pending review
 
