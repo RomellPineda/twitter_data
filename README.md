@@ -103,4 +103,4 @@ In the unlikely event that team members encounter an unresolvable issue between 
 
 ## License
 
-This project uses the following license: [MIT License]("https://opensource.org/licenses/MIT").
+This project uses the following license: [MIT License](https://opensource.org/licenses/MIT)
