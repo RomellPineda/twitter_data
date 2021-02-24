@@ -25,7 +25,7 @@ We want to find factors (such as hashtags, specific keywords, emojis, etc.) that
 8) Extract analysis/findings
 9) Compile all findings and conclusions into a final presentation
 
-## Technologies to be Used
+## Technologies Used
 Git/Github<br/>
 Trello<br/>
 Scala/Spark<br/>
@@ -84,5 +84,23 @@ In general, if resolving merge conflicts is not going well, you can run `git reb
 - It is good practice to check other files you have altered to see if any other conflicts exist
 - run `git rebase --continue` to complete the rebase process
 
+## Getting Started
+1. Install all required dependencies with correct versions.
+2. Clone the repository to your local environment.
+3. Acquire a Twitter developer account and a bearer token for authentication.
+4. Run the command provided in the preferences.txt file on your Mac terminal or Windows command prompt.
+5. From the either the terminal or command prompt navigate to the project directory where the build.sbt file resides.
+6. Run
+```
+sbt clean
+sbt reload
+sbt assembly
+park-submit target/scala-2.11/twitter_data-assembly-0.1.0-SNAPSHOT.jar
+```
+
 ## Conflict Resolution Plan
 In the unlikely event that team members encounter an unresolvable issue between themselves, a knowledgeable, neutral third-party will be consulted to aid in resolution.  However, team members are encouraged to resolve all issues internally.   
+
+## License
+
+This project uses the following license: [MIT License]("https://opensource.org/licenses/MIT").
