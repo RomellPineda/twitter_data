@@ -98,9 +98,6 @@ sbt assembly
 park-submit target/scala-2.11/twitter_data-assembly-0.1.0-SNAPSHOT.jar
 ```
 
-## Conflict Resolution Plan
-In the unlikely event that team members encounter an unresolvable issue between themselves, a knowledgeable, neutral third-party will be consulted to aid in resolution.  However, team members are encouraged to resolve all issues internally.   
-
 ## License
 
 This project uses the following license: [MIT License](https://opensource.org/licenses/MIT)
